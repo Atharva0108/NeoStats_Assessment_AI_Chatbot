@@ -20,14 +20,14 @@ __pycache__/
 *.npy
 *.npz
 
-# Large or private data
-data/knowledge_base/*.pdf
-data/knowledge_base/*.docx
-data/knowledge_base/*.txt
+# # Large or private data
+# data/knowledge_base/*.pdf
+# data/knowledge_base/*.docx
+# data/knowledge_base/*.txt
 
-# Local embeddings (optional if you rebuild them remotely)
-data/embeddings/faiss_index.bin
-data/embeddings/metadata.json
+# # Local embeddings (optional if you rebuild them remotely)
+# data/embeddings/faiss_index.bin
+# data/embeddings/metadata.json
 
 # VSCode / IDE
 .vscode/
