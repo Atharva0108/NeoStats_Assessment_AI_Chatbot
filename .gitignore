@@ -1,0 +1,38 @@
+# Virtual environment
+bot/
+.env
+*.env
+
+# Cache / temp / compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+*.DS_Store
+
+# Streamlit cache
+.streamlit/
+.stcache/
+.streamlit/secrets.toml
+
+# FAISS build caches (optional if you regenerate)
+*.npy
+*.npz
+
+# Large or private data
+data/knowledge_base/*.pdf
+data/knowledge_base/*.docx
+data/knowledge_base/*.txt
+
+# Local embeddings (optional if you rebuild them remotely)
+data/embeddings/faiss_index.bin
+data/embeddings/metadata.json
+
+# VSCode / IDE
+.vscode/
+.idea/
+*.iml
+
+# Misc
+*.zip
