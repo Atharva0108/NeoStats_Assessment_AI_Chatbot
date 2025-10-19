@@ -87,15 +87,23 @@ def load_faiss_index(index_path=FAISS_INDEX_PATH, metadata_path=METADATA_PATH):
 
 def query_faiss(query: str, top_k: int, index=None, metadata=None):
     """
-    Returns top_k metadata items and their texts for a query string.
+    Returns top_k metadata items, their texts, and similarity scores for a query string.
     """
     if index is None or metadata is None:
         index, metadata = load_faiss_index()
+
     q_emb = embed_texts([query]).astype("float32")
     D, I = index.search(q_emb, top_k)
+
     results = []
-    for i in I[0]:
-        if i < len(metadata):
-            # fetch the chunk text stored in metadata['text'] (truncated preview) OR you could store full chunks separately
-            results.append(metadata[i].get("text", ""))
-    return results
+    scores = []
+
+    for dist, idx in zip(D[0], I[0]):
+        if idx < len(metadata):
+            text = metadata[idx].get("text", "")
+            results.append(text)
+            # FAISS uses L2 distance; smaller is better — convert to similarity
+            similarity = 1 / (1 + dist)
+            scores.append(similarity)
+
+    return results, scores

@@ -11,27 +11,23 @@ st.set_page_config(page_title="SmartContext Chatbot (Gemini + RAG + Web Search)"
 
 st.title("🌐 SmartContext Chatbot — Gemini + RAG + Web Search")
 st.markdown(
-    "A context-aware chatbot using your **local knowledge base (RAG)** and **Google Gemini**. "
-    "If no relevant context is found locally, it will automatically **search the web** for real-time information."
+    "A chatbot that answers using your **local knowledge base** (RAG) and **Google Gemini**. "
+    "If context is missing or irrelevant, it automatically performs a **live web search**."
 )
 
-# Sidebar configuration
 with st.sidebar:
     st.header("Settings ⚙️")
     mode = st.radio("Response mode:", ["Concise", "Detailed"])
-    st.write("Top-K retrieval")
-    k = st.slider("Top K:", min_value=1, max_value=10, value=TOP_K)
-    show_context = st.checkbox("Show retrieved context", value=True)
+    k = st.slider("Top K:", 1, 10, TOP_K)
+    show_context = st.checkbox("Show retrieved context", True)
 
-    # Optional file upload for knowledge base
     uploaded = st.file_uploader("Upload a document (PDF or TXT)", type=["pdf", "txt"])
-    if uploaded is not None:
+    if uploaded:
         save_path = os.path.join("data", "knowledge_base", uploaded.name)
         with open(save_path, "wb") as f:
             f.write(uploaded.getbuffer())
-        st.success(f"✅ Saved to `{save_path}`. Rebuild embeddings locally for persistence (`python build_embeddings.py`).")
+        st.success(f"✅ Saved to `{save_path}`. Run `python build_embeddings.py` locally to rebuild the index.")
 
-# Chat section
 st.write("---")
 query = st.text_area("💬 Ask anything:", height=120)
 
@@ -40,38 +36,30 @@ if st.button("Get Answer"):
         st.warning("Please enter a query.")
     else:
         try:
-            # 1. Load FAISS + metadata
             index, metadata = load_faiss_index()
+            retrieved, scores = query_faiss(query, top_k=k, index=index, metadata=metadata)
 
-            # 2. Retrieve top-k chunks
-            retrieved = query_faiss(query, top_k=k, index=index, metadata=metadata)
+            avg_score = sum(scores) / len(scores) if scores else 0
+            similarity_threshold = 0.25  # you can tune this (lower = stricter)
 
-            # 3. Check if we have context; otherwise use web search fallback
-            if not any(retrieved):
-                st.info("⚠️ No relevant context found in local knowledge base. Using Gemini Web Search...")
-                with st.spinner("🔍 Searching the web..."):
+            if not retrieved or avg_score < similarity_threshold:
+                st.info("⚠️ Local context missing or irrelevant. Using Gemini Web Search...")
+                with st.spinner("🌍 Searching the web..."):
                     answer = web_search_answer(query)
                 st.markdown("### 🌍 Answer (via Web Search)")
                 st.write(answer)
             else:
-                # 4. Build prompt with context
                 prompt = build_prompt(retrieved, query, mode=mode)
-
-                # 5. Optionally show context
                 if show_context:
                     with st.expander("📚 Retrieved context (Top Chunks)"):
-                        for i, r in enumerate(retrieved, start=1):
-                            st.markdown(f"**Chunk {i}:**")
+                        for i, (r, s) in enumerate(zip(retrieved, scores), 1):
+                            st.markdown(f"**Chunk {i}** — similarity: `{s:.3f}`")
                             st.write(r)
-
-                # 6. Call Gemini for context-based response
                 with st.spinner("🤖 Generating answer with Gemini..."):
                     answer = generate_gemini_response(prompt)
-
                 st.markdown("### 💡 Answer (via Knowledge Base)")
                 st.write(answer)
-
         except FileNotFoundError as fe:
-            st.error(str(fe) + "\n\nRun `python build_embeddings.py` locally to create FAISS index and metadata.")
+            st.error(str(fe) + "\n\nRun `python build_embeddings.py` to create FAISS index.")
         except Exception as e:
             st.error(f"Unexpected error: {e}")
