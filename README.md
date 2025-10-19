@@ -2,7 +2,7 @@
 
 SmartContext Chatbot is a context-aware AI chatbot that combines Google Gemini 2.5 Flash LLM with RAG (Retrieval-Augmented Generation) using local documents. It allows you to ask questions against your knowledge base (PDF/TXT) and get accurate, context-driven answers via a Streamlit interface.
 
-Live Demo: <YOUR_STREAMLIT_URL>
+Live Demo: https://neostatsaichatbot.streamlit.app/
 
 ---
 
